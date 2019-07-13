@@ -128,6 +128,7 @@ def save_to_html(comments):
         file.write(f'<thead>')
         file.write(f'<tr>')
         file.write(f'<td style="min-width:65px;border: 1px solid #f4f4f4;padding: 5px;">评论者id</td>'
+                   f'<td style="min-width:65px;border: 1px solid #f4f4f4;padding: 5px;">头像</td>'
                    f'<td style="min-width:65px;border: 1px solid #f4f4f4;padding: 5px;">昵称</td>'
                    f'<td style="min-width:65px;border: 1px solid #f4f4f4;padding: 5px;">评论内容</td>'
                    f'<td style="min-width:65px;border: 1px solid #f4f4f4;padding: 5px;">点赞总数</td>')
@@ -138,8 +139,10 @@ def save_to_html(comments):
             nickname = item['user']['nickname']  # 昵称
             comment = item['content']  # 评论内容
             likedCount = item['likedCount']  # 点赞总数
+            avatar = item['user']['avatarUrl']  # 头像
             file.write(f'<tr>')
             file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{userID}</td>')
+            file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;"><img src="{avatar}" width="50" height="50" /></td>')
             file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{nickname}</td>')
             file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{comment}</td>')
             file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{likedCount}</td>')
