@@ -8,5 +8,5 @@
 * <details>
      <summary>网易</summary>
      
-	 - [网易云音乐评论](/Get-Cloud-Music-Comments.py)
+	 - [网易云音乐评论](/Netease/Get-Cloud-Music-Comments.py)
  </details>
