@@ -10,10 +10,13 @@ import requests
 import time
 from Crypto.Cipher import AES
 
+id = input('请输入歌曲ID:')
+name = input('请输入歌曲名称:')
+
 url = 'https://music.163.com/weapi/v1/resource/comments/R_SO_4_551816010?csrf_token='
 header = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36',
-    'Referer': 'http://music.163.com/song?id=1361771499',
+    'Referer': f'http://music.163.com/song?id={id}',
     'Origin': 'http://music.163.com',
     'Host': 'music.163.com'
 }
@@ -163,7 +166,7 @@ def save_to_txt(comments):
         comment_info = f'{userID} | {nickname} | {comment} | {likedCount}'.replace('\r', '').replace('\n', '')
         comment_info += f'\r\n-----------------------------------------------------\r\n'
         commentsList += comment_info
-    with codecs.open('等风也等你.txt', 'w', encoding='utf-8') as file:
+    with codecs.open(f'{name}.txt', 'w', encoding='utf-8') as file:
         file.writelines(commentsList)
 
     print("写入文件成功!")
