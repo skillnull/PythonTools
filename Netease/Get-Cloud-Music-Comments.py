@@ -9,7 +9,10 @@ import json
 import requests
 import time
 from Crypto.Cipher import AES
+import multiprocessing
+import os
 
+# 感谢你曾来过 460578140
 id = input('请输入歌曲ID:')
 name = input('请输入歌曲名称:')
 
@@ -88,7 +91,7 @@ def get_json(url, pm, esk):
 
 
 # 抓取一首歌的全部评论
-def get_all_comment(url):
+def get_all_comment(url, thread):
     # 存放评论
     list_all = []
     # 文件头部
@@ -106,16 +109,11 @@ def get_all_comment(url):
         page = int(comments_num / 20) + 1
     print(f'共有{comments_num}条评论!')  # 全部评论总数
     print(f'共有{page}页评论!')
-    for i in range(page):  # 逐页抓取
-        params = get_params(i + 1)
-        encSecKey = get_rsa(strw)
-        json_text = get_json(url, params, encSecKey)
-        json_dict = json.loads(json_text)
 
-        save_to_html(json_dict['comments'])
-        save_to_txt(json_dict['comments'])
-
-        print(f'第{i + 1}页抓取完毕!')
+    if thread == 'html':
+        save_to_html(range(page))
+    if thread == 'txt':
+        save_to_txt(range(page))
 
 
 # 将评论存储为html
@@ -124,7 +122,7 @@ def save_to_html(comments):
         file.write(f'<html>')  # 设置输出的html文件的格式
         file.write(f'<head>')
         file.write(f'<meta charset="utf-8">')
-        file.write(f'<title>等风也等你</title>')
+        file.write(f'<title>{name}</title>')
         file.write(f'</head>')
         file.write(f'<body>')
         file.write(f'<table style="font-size:12px;font-weight:300;">')
@@ -137,19 +135,24 @@ def save_to_html(comments):
                    f'<td style="min-width:65px;border: 1px solid #f4f4f4;padding: 5px;">点赞总数</td>')
         file.write(f'</tr>')
         file.write(f'</thead>')
-        for item in comments:
-            userID = item['user']['userId']  # 评论者id
-            nickname = item['user']['nickname']  # 昵称
-            comment = item['content']  # 评论内容
-            likedCount = item['likedCount']  # 点赞总数
-            avatar = item['user']['avatarUrl']  # 头像
-            file.write(f'<tr>')
-            file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{userID}</td>')
-            file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;"><img src="{avatar}" width="50" height="50" /></td>')
-            file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{nickname}</td>')
-            file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{comment}</td>')
-            file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{likedCount}</td>')
-            file.write(f'</tr>')
+        for i in comments:  # 逐页抓取
+            params = get_params(i + 1)
+            encSecKey = get_rsa(strw)
+            json_text = get_json(url, params, encSecKey)
+            json_dict = json.loads(json_text)
+            for item in json_dict['comments']:
+                userID = item['user']['userId']  # 评论者id
+                nickname = item['user']['nickname']  # 昵称
+                comment = item['content']  # 评论内容
+                likedCount = item['likedCount']  # 点赞总数
+                avatar = item['user']['avatarUrl']  # 头像
+                file.write(f'<tr>')
+                file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{userID}</td>')
+                file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;"><img src="{avatar}" width="50" height="50" /></td>')
+                file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{nickname}</td>')
+                file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{comment}</td>')
+                file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{likedCount}</td>')
+                file.write(f'</tr>')
         file.write(f'</table>')
         file.write(f'</body>')
         file.write(f'</html>')
@@ -157,23 +160,35 @@ def save_to_html(comments):
 
 # 将评论写入文本文件
 def save_to_txt(comments):
-    commentsList = ''
-    for item in comments:
-        comment = item['content']  # 评论内容
-        nickname = item['user']['nickname']  # 昵称
-        userID = item['user']['userId']  # 评论者id
-        likedCount = item['likedCount']  # 点赞总数
-        comment_info = f'{userID} | {nickname} | {comment} | {likedCount}'.replace('\r', '').replace('\n', '')
-        comment_info += f'\r\n-----------------------------------------------------\r\n'
-        commentsList += comment_info
     with codecs.open(f'{name}.txt', 'w', encoding='utf-8') as file:
-        file.writelines(commentsList)
-
-    print("写入文件成功!")
+        for i in comments:  # 逐页抓取
+            commentsList = ''
+            params = get_params(i + 1)
+            encSecKey = get_rsa(strw)
+            json_text = get_json(url, params, encSecKey)
+            json_dict = json.loads(json_text)
+            for item in json_dict['comments']:
+                comment = item['content']  # 评论内容
+                nickname = item['user']['nickname']  # 昵称
+                userID = item['user']['userId']  # 评论者id
+                likedCount = item['likedCount']  # 点赞总数
+                comment_info = f'{userID} | {nickname} | {comment} | {likedCount}'.replace('\r', '').replace('\n', '')
+                comment_info += f'\r\n-----------------------------------------------------\r\n'
+                commentsList += comment_info
+            print(f'第{i + 1}页抓取完毕!')
+            file.writelines(commentsList)
+            print("写入文件成功!")
 
 
 if __name__ == '__main__':
     start_time = time.time()  # 开始时间
-    get_all_comment(url)
+
+    p = multiprocessing.Process(target=get_all_comment, args=(url, 'html',))
+    p.start()
+    p = multiprocessing.Process(target=get_all_comment, args=(url, 'txt',))
+    p.start()
+
+    p.join()
+
     end_time = time.time()  # 结束时间
     print("程序耗时%f秒." % (end_time - start_time))
