@@ -39,7 +39,7 @@ def saveToTxt(comments, title):
         comment_info = f'{item}'.replace(f'<br/>', '')
         comment_info = re.sub(f'<p>.*</p>', '', comment_info)
         commentsList += comment_info
-    with codecs.open(f'books/{title}.txt', 'w', encoding='utf-8') as file:
+    with codecs.open(f'MoFeiDingLv/{title}.txt', 'w', encoding='utf-8') as file:
         file.writelines(commentsList)
 
     print(f'{title}写入文件成功!')
