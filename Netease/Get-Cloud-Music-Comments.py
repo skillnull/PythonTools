@@ -1,6 +1,6 @@
 #!/usr/local/bin/python3.7
 # -*- coding: utf-8 -*-
-# @Time: 2019/07/12 17:20
+# @Time: 2019/07/12
 # @Function 获取网易云音乐评论
 
 import base64

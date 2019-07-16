@@ -10,3 +10,9 @@
      
 	 - [网易云音乐评论](/Netease/Get-Cloud-Music-Comments.py)
  </details>
+
+* <details>
+     <summary>爬取小说保存在txt</summary>
+     
+	 - [墨菲定律](/GetBooks/MoFeiDingLv.py)
+ </details>
