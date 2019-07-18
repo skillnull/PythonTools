@@ -1,6 +1,6 @@
 #!/usr/local/bin/python3.7
 # -*- coding: utf-8 -*-
-# @Time: 2019/07/12
+# @Author skillnull
 # @Function 获取网易云音乐评论
 
 import base64
@@ -9,7 +9,7 @@ import json
 import requests
 import time
 from Crypto.Cipher import AES
-import multiprocessing
+import multiprocessing  # 多进程
 import os
 
 # 感谢你曾来过 460578140
@@ -18,18 +18,22 @@ name = input('请输入歌曲名称:')
 
 url = 'https://music.163.com/weapi/v1/resource/comments/R_SO_4_551816010?csrf_token='
 header = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36',
-    'Referer': f'http://music.163.com/song?id={id}',
+    'Host': 'music.163.com',
     'Origin': 'http://music.163.com',
-    'Host': 'music.163.com'
+    'Referer': f'http://music.163.com/song?id={id}',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Connection': 'keep-alive',
+    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,da;q=0.7'
 }
 # 设置代理服务器
 proxies = {
     'http:': 'http://121.232.146.184',
     'https:': 'https://144.255.48.197'
 }
-# rid 是歌曲的id标志 offset是控制翻页的标志
-# first_param = b'{"rid":"", "offset":"0", "total":"true", "limit":"20", "csrf_token":""}'
+# rid 是歌曲的 id 标志 offset是控制翻页的标志
+first_param = ''
 second_param = '010001'
 third_param = '00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa' \
               '76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee' \
@@ -39,28 +43,26 @@ forth_param = b'0CoJUm6Qyw8W8jud'
 strw = 'S' * 16
 
 
+# aes加密
 def aesEncrypt(text, key):
-    # 偏移量
-    iv = b'0102030405060708'
-    pad = 16 - len(text) % 16
-    # print(type(text))
-    tt = pad * chr(pad)
+    iv = b'0102030405060708'  # 偏移量
+    pad = 16 - len(text) % 16  # 使加密信息的长度为16的倍数
+    tt = pad * chr(pad)  # 返回整数i对应的ASCII字符
     text = text + tt.encode('utf-8')
     encrpyptor = AES.new(key, AES.MODE_CBC, iv)
-    cipher_text = encrpyptor.encrypt(text)
-    cipher_text = base64.b64encode(cipher_text)
+    cipher_text = base64.b64encode(encrpyptor.encrypt(text))
     return cipher_text
 
 
+# rsa加密
 def rsaEncrypt(pubkey, text, mouduls):
     text = text[::-1]
     rs = int(codecs.encode(text.encode('utf-8'), 'hex_codec'), 16) ** int(pubkey, 16) % int(mouduls, 16)
-    rs = format(rs, 'x').zfill(256)
-    # print(rs)
-    return rs
+    return format(rs, 'x').zfill(256)
 
 
-def get_params(text):
+# 获取aes加密参数
+def get_aes_params(text):
     if text == 1:
         first_param = b'{"rid":"", "offset":"0", "total":"true", "limit":"20", "csrf_token":""}'
         params = aesEncrypt(first_param, forth_param)
@@ -68,15 +70,14 @@ def get_params(text):
         offset = str((text - 1) * 20)
         first_param = b'{"rid":"", "offset":"%b", "total":"false", "limit":"20", "csrf_token":""}' % offset.encode('utf-8')
         params = aesEncrypt(first_param, forth_param)
-    # print('params的随机值是: ')
-    # print(params)
+    # print(f'params的随机值是:{params} ')
     params = aesEncrypt(params, strw.encode('utf-8'))
-    # print('第二次加密后的随机值是：')
-    # print(params)
+    # print(f'第二次加密后的随机值是：{params}')
     return params
 
 
-def get_rsa(text):
+# 获取rsa加密参数
+def get_rsa_params(text):
     encseckey = rsaEncrypt(second_param, text, third_param)
     return encseckey
 
@@ -91,31 +92,33 @@ def get_json(url, pm, esk):
 
 
 # 抓取一首歌的全部评论
-def get_all_comment(url, thread):
-    # 存放评论
-    list_all = []
-    # 文件头部
-    list_all.append(u'用户ID 用户昵称 用户头像地址 评论时间 点赞总数 评论内容\n')
-    params = get_params(1)
-    encSecKey = get_rsa(strw)
+def get_all_comment(url):
+    params = get_aes_params(1)
+    encSecKey = get_rsa_params(strw)
     json_text = get_json(url, params, encSecKey)
     json_dict = json.loads(json_text)
-    # print(json_text)
     comments_num = int(json_dict['total'])
-    # print(comments_num)
+
     if comments_num % 20 == 0:
         page = comments_num / 20
     else:
         page = int(comments_num / 20) + 1
-    print(f'共有{comments_num}条评论!')  # 全部评论总数
-    print(f'共有{page}页评论!')
 
-    os.makedirs('musicComments', mode=0o777, exist_ok=True)
+    print(f'共有{comments_num}条,{page}页评论!')
 
-    if thread == 'html':
-        save_to_html(range(page))
-    if thread == 'txt':
-        save_to_txt(range(page))
+    os.makedirs('musicComments', mode=0o777, exist_ok=True)  # 创建文件夹目录
+
+    handler_comments(range(page))
+
+
+# 处理抓取到的评论
+def handler_comments(comments):
+    p = multiprocessing.Process(target=save_to_html, args=(comments,))
+    p.start()
+    p = multiprocessing.Process(target=save_to_txt, args=(comments,))
+    p.start()
+
+    p.join()
 
 
 # 将评论存储为html
@@ -138,8 +141,8 @@ def save_to_html(comments):
         file.write(f'</tr>')
         file.write(f'</thead>')
         for i in comments:  # 逐页抓取
-            params = get_params(i + 1)
-            encSecKey = get_rsa(strw)
+            params = get_aes_params(i + 1)
+            encSecKey = get_rsa_params(strw)
             json_text = get_json(url, params, encSecKey)
             json_dict = json.loads(json_text)
             for item in json_dict['comments']:
@@ -165,8 +168,8 @@ def save_to_txt(comments):
     with codecs.open(f'musicComments/{name}.txt', 'w', encoding='utf-8') as file:
         for i in comments:  # 逐页抓取
             commentsList = ''
-            params = get_params(i + 1)
-            encSecKey = get_rsa(strw)
+            params = get_aes_params(i + 1)
+            encSecKey = get_rsa_params(strw)
             json_text = get_json(url, params, encSecKey)
             json_dict = json.loads(json_text)
             for item in json_dict['comments']:
@@ -184,13 +187,6 @@ def save_to_txt(comments):
 
 if __name__ == '__main__':
     start_time = time.time()  # 开始时间
-
-    p = multiprocessing.Process(target=get_all_comment, args=(url, 'html',))
-    p.start()
-    p = multiprocessing.Process(target=get_all_comment, args=(url, 'txt',))
-    p.start()
-
-    p.join()
-
+    get_all_comment(url)
     end_time = time.time()  # 结束时间
-    print("程序耗时%f秒." % (end_time - start_time))
+    print(f'程序耗时{end_time - start_time}秒')
