@@ -10,7 +10,6 @@ import requests
 import time
 from Crypto.Cipher import AES
 import multiprocessing
-import os
 
 # 感谢你曾来过 460578140
 id = input('请输入歌曲ID:')
