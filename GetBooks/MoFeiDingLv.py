@@ -45,4 +45,5 @@ def saveToTxt(comments, title):
     print(f'{title}写入文件成功!')
 
 
-getContent()
+if __name__ == '__main__':
+    getContent()
