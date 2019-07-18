@@ -10,6 +10,7 @@ import requests
 import time
 from Crypto.Cipher import AES
 import multiprocessing
+import os
 
 # 感谢你曾来过 460578140
 id = input('请输入歌曲ID:')
@@ -109,6 +110,8 @@ def get_all_comment(url, thread):
     print(f'共有{comments_num}条评论!')  # 全部评论总数
     print(f'共有{page}页评论!')
 
+    os.makedirs('musicComments', mode=0o777, exist_ok=True)
+
     if thread == 'html':
         save_to_html(range(page))
     if thread == 'txt':
@@ -117,7 +120,7 @@ def get_all_comment(url, thread):
 
 # 将评论存储为html
 def save_to_html(comments):
-    with codecs.open('output.html', 'w') as file:
+    with codecs.open('musicComments/output.html', 'w') as file:
         file.write(f'<html>')  # 设置输出的html文件的格式
         file.write(f'<head>')
         file.write(f'<meta charset="utf-8">')
@@ -159,7 +162,7 @@ def save_to_html(comments):
 
 # 将评论写入文本文件
 def save_to_txt(comments):
-    with codecs.open(f'{name}.txt', 'w', encoding='utf-8') as file:
+    with codecs.open(f'musicComments/{name}.txt', 'w', encoding='utf-8') as file:
         for i in comments:  # 逐页抓取
             commentsList = ''
             params = get_params(i + 1)
