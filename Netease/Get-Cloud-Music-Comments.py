@@ -4,6 +4,7 @@
 # @Function 获取网易云音乐评论
 
 import os
+import random
 import sys
 import json
 import time
@@ -39,7 +40,14 @@ header = {
     'Accept-Encoding': 'gzip, deflate, br',
     'Content-Type': 'application/x-www-form-urlencoded',
     'Connection': 'keep-alive',
-    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,da;q=0.7'
+    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,da;q=0.7',
+    'Cookie': '_iuqxldmzr_=32; _ntes_nnid=0e6e1606eb78758c48c3fc823c6c57dd,1527314455632; '
+              '_ntes_nuid=0e6e1606eb78758c48c3fc823c6c57dd; __utmc=94650624; __utmz=94650624.1527314456.1.1.'
+              'utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); WM_TID=blBrSVohtue8%2B6VgDkxOkJ2G0VyAgyOY;'
+              ' JSESSIONID-WYYY=Du06y%5Csx0ddxxx8n6G6Dwk97Dhy2vuMzYDhQY8D%2BmW3vlbshKsMRxS%2BJYEnvCCh%5CKY'
+              'x2hJ5xhmAy8W%5CT%2BKqwjWnTDaOzhlQj19AuJwMttOIh5T%5C05uByqO%2FWM%2F1ZS9sqjslE2AC8YD7h7Tt0Shufi'
+              '2d077U9tlBepCx048eEImRkXDkr%3A1527321477141; __utma=94650624.1687343966.1527314456.1527314456'
+              '.1527319890.2; __utmb=94650624.3.10.1527319890'
 }
 # 设置代理服务器
 proxies = ip_pool
@@ -170,6 +178,8 @@ def save_to_html(comments):
                 file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{comment}</td>')
                 file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{likedCount}</td>')
                 file.write(f'</tr>')
+                sleeptime = random.randint(0, 1)
+                time.sleep(sleeptime)
         file.write(f'</table>')
         file.write(f'</body>')
         file.write(f'</html>')
@@ -193,6 +203,8 @@ def save_to_txt(comments):
                 comment_info += f'\r\n-----------------------------------------------------\r\n'
                 commentsList += comment_info
             file.writelines(commentsList)
+            sleeptime = random.randint(0, 1)
+            time.sleep(sleeptime)
             print(f'第{i + 1}页写入文件成功!')
     get_wordcloud()
 
