@@ -27,8 +27,6 @@ from lib import SetProxiesPool  # 调用自定义模块
 # 从代理池取出可用代理ip
 ip_pool = SetProxiesPool.get_random_ip(SetProxiesPool.get_ip_list('https://www.xicidaili.com/nn/'))
 
-# 感谢你曾来过 460578140
-# 晚安 1359356908
 id = input('请输入歌曲ID:')
 name = input('请输入歌曲名称:')
 
@@ -137,7 +135,7 @@ def handler_comments(comments):
 
 # 将评论存储为html
 def save_to_html(comments):
-    with codecs.open('musicComments/output.html', 'w') as file:
+    with codecs.open(f'musicComments/{id}.html', 'w') as file:
         file.write(f'<html>')  # 设置输出的html文件的格式
         file.write(f'<head>')
         file.write(f'<meta charset="utf-8">')
