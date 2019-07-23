@@ -3,16 +3,32 @@
 # @Author skillnull
 # @Function 获取网易云音乐评论
 
+import os
+import sys
+import json
+import time
 import base64
 import codecs
-import json
 import requests
-import time
-from Crypto.Cipher import AES
 import multiprocessing  # 多进程
-import os
+from Crypto.Cipher import AES
+
+import re  # 正则表达式库
+import numpy as np  # numpy数据处理库
+import collections  # 词频统计库
+import wordcloud  # 词云展示库
+import jieba  # 结巴分词
+import matplotlib.pyplot as plt
+from PIL import Image  # 图像处理库
+
+sys.path.append('..')  # 将自定义模块目录添加进来
+from lib import SetProxiesPool  # 调用自定义模块
+
+# 从代理池取出可用代理ip
+ip_pool = SetProxiesPool.get_random_ip(SetProxiesPool.get_ip_list('https://www.xicidaili.com/nn/'))
 
 # 感谢你曾来过 460578140
+# 晚安 1359356908
 id = input('请输入歌曲ID:')
 name = input('请输入歌曲名称:')
 
@@ -28,10 +44,7 @@ header = {
     'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,da;q=0.7'
 }
 # 设置代理服务器
-proxies = {
-    'http:': 'http://121.232.146.184',
-    'https:': 'https://144.255.48.197'
-}
+proxies = ip_pool
 # rid 是歌曲的 id 标志 offset是控制翻页的标志
 first_param = ''
 second_param = '010001'
@@ -82,12 +95,13 @@ def get_rsa_params(text):
     return encseckey
 
 
+# 抓取评论
 def get_json(url, pm, esk):
     form_data = {
         'params': pm,
         'encSecKey': esk
     }
-    json_text = requests.post(url, headers=header, data=form_data).text
+    json_text = requests.post(url, headers=header, data=form_data, proxies=proxies).text
     return json_text
 
 
@@ -100,9 +114,9 @@ def get_all_comment(url):
     comments_num = int(json_dict['total'])
 
     if comments_num % 20 == 0:
-        page = comments_num / 20
+        page = comments_num // 20
     else:
-        page = int(comments_num / 20) + 1
+        page = int(comments_num // 20) + 1
 
     print(f'共有{comments_num}条,{page}页评论!')
 
@@ -183,6 +197,53 @@ def save_to_txt(comments):
             print(f'第{i + 1}页抓取完毕!')
             file.writelines(commentsList)
             print("写入文件成功!")
+    get_wordcloud()
+
+
+# 生成词云
+def get_wordcloud():
+    # 读取文件
+    fn = open(f'musicComments/{name}.txt', encoding="utf-8")  # 打开文件
+    string_data = fn.read()  # 读出整个文件
+    fn.close()  # 关闭文件
+
+    # 文本预处理
+    pattern = re.compile(u'\t|\n|\.|-|:|;|\||\)|\(|\?|"')  # 定义正则表达式匹配模式
+    string_data = re.sub(pattern, '', string_data)  # 将符合模式的字符去除
+
+    # 文本分词
+    seg_list_exact = jieba.cut(string_data, cut_all=False)  # 精确模式分词
+    object_list = []
+    remove_words = [u'的', u'，', u'和', u'是', u'随着', u'对于', u'对', u'等', u'能', u'都', u'。', u' ', u'、', u'中', u'在', u'了',
+                    u'通常', u'如果', u'我们', u'需要']  # 自定义去除词库
+
+    for word in seg_list_exact:  # 循环读出每个分词
+        if word not in remove_words:  # 如果不在去除词库中
+            object_list.append(word)  # 分词追加到列表
+
+    # 词频统计
+    word_counts = collections.Counter(object_list)  # 对分词做词频统计
+    word_counts_top = word_counts.most_common(15)  # 获取高频的词
+    print(word_counts_top)  # 输出检查
+
+    # 词频展示
+    mask = np.array(Image.open('musicComments/wordcloud_bg.jpeg'))  # 定义词频背景
+    wc = wordcloud.WordCloud(
+        font_path='/System/Library/fonts/PingFang.ttc',  # 设置字体格式
+        mask=mask,  # 设置背景图
+        background_color="white",
+        scale=6,  # 放大画布
+        mode="RGBA",  # 当参数为“RGBA”并且background_color不为空时，背景为透明
+        max_words=400,  # 最多显示词数
+        max_font_size=80  # 字体最大值
+    )
+
+    wc.generate_from_frequencies(word_counts)  # 从字典生成词云
+    image_colors = wordcloud.ImageColorGenerator(mask)  # 从背景图建立颜色方案
+    wc.recolor(color_func=image_colors)  # 将词云颜色设置为背景图方案
+    plt.imshow(wc)  # 显示词云
+    plt.axis('off')  # 关闭坐标轴
+    plt.savefig(f'musicComments/{name}.png', dpi=72)
 
 
 if __name__ == '__main__':
