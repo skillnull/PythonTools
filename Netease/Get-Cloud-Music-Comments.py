@@ -103,7 +103,7 @@ def get_json(url, pm, esk):
     return json_text
 
 
-# 抓取一首歌的全部评论
+# 解析评论
 def get_all_comment(url):
     params = get_aes_params(1)
     encSecKey = get_rsa_params(strw)
@@ -118,12 +118,12 @@ def get_all_comment(url):
 
     print(f'共有{comments_num}条,{page}页评论!')
 
-    os.makedirs('musicComments', mode=0o777, exist_ok=True)  # 创建文件夹目录
+    os.makedirs(f'musicComments/{id}', mode=0o777, exist_ok=True)  # 创建歌曲文件夹目录
 
     handler_comments(range(page))
 
 
-# 处理抓取到的评论
+# 处理解析后的评论
 def handler_comments(comments):
     p = multiprocessing.Process(target=save_to_html, args=(comments,))
     p.start()
@@ -135,7 +135,7 @@ def handler_comments(comments):
 
 # 将评论存储为html
 def save_to_html(comments):
-    with codecs.open(f'musicComments/{id}.html', 'w') as file:
+    with codecs.open(f'musicComments/{id}/{id}.html', 'w') as file:
         file.write(f'<html>')  # 设置输出的html文件的格式
         file.write(f'<head>')
         file.write(f'<meta charset="utf-8">')
@@ -177,7 +177,7 @@ def save_to_html(comments):
 
 # 将评论写入文本文件
 def save_to_txt(comments):
-    with codecs.open(f'musicComments/{name}.txt', 'w', encoding='utf-8') as file:
+    with codecs.open(f'musicComments/{id}/{name}.txt', 'w', encoding='utf-8') as file:
         for i in comments:  # 逐页抓取
             commentsList = ''
             params = get_aes_params(i + 1)
@@ -192,16 +192,15 @@ def save_to_txt(comments):
                 comment_info = f'{userID} | {nickname} | {comment} | {likedCount}'.replace('\r', '').replace('\n', '')
                 comment_info += f'\r\n-----------------------------------------------------\r\n'
                 commentsList += comment_info
-            print(f'第{i + 1}页抓取完毕!')
             file.writelines(commentsList)
-            print("写入文件成功!")
+            print(f'第{i + 1}页写入文件成功!')
     get_wordcloud()
 
 
 # 生成词云
 def get_wordcloud():
     # 读取文件
-    fn = open(f'musicComments/{name}.txt', encoding="utf-8")  # 打开文件
+    fn = open(f'musicComments/{id}/{name}.txt', encoding="utf-8")  # 打开文件
     string_data = fn.read()  # 读出整个文件
     fn.close()  # 关闭文件
 
@@ -241,7 +240,7 @@ def get_wordcloud():
     wc.recolor(color_func=image_colors)  # 将词云颜色设置为背景图方案
     plt.imshow(wc)  # 显示词云
     plt.axis('off')  # 关闭坐标轴
-    plt.savefig(f'musicComments/{name}.png', dpi=72)
+    plt.savefig(f'musicComments/{id}/{name}.png', dpi=72)
 
 
 if __name__ == '__main__':
