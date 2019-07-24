@@ -171,7 +171,7 @@ def save_to_html(comments):
                 file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{comment}</td>')
                 file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{likedCount}</td>')
                 file.write(f'</tr>')
-                sleeptime = random.randint(0, 1)
+                sleeptime = random.randint(0, 2)
                 time.sleep(sleeptime)
         file.write(f'</table>')
         file.write(f'</body>')
@@ -196,7 +196,7 @@ def save_to_txt(comments):
                 comment_info += f'\r\n-----------------------------------------------------\r\n'
                 commentsList += comment_info
             file.writelines(commentsList)
-            sleeptime = random.randint(0, 1)
+            sleeptime = random.randint(0, 3)
             time.sleep(sleeptime)
             print(f'第{i + 1}页写入文件成功!')
     get_wordcloud()
@@ -225,11 +225,11 @@ def get_wordcloud():
 
     # 词频统计
     word_counts = collections.Counter(object_list)  # 对分词做词频统计
-    word_counts_top = word_counts.most_common(15)  # 获取高频的词
+    word_counts_top = word_counts.most_common(50)  # 获取高频的词
     print(word_counts_top)  # 输出检查
 
     # 词频展示
-    mask = np.array(Image.open('musicComments/wordcloud_bg.jpeg'))  # 定义词频背景
+    mask = np.array(Image.open('musicComments/wordcloud_bg.jpg'))  # 定义词频背景
     wc = wordcloud.WordCloud(
         font_path='/System/Library/fonts/PingFang.ttc',  # 设置字体格式
         mask=mask,  # 设置背景图
