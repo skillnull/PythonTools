@@ -210,14 +210,14 @@ def get_wordcloud():
     fn.close()  # 关闭文件
 
     # 文本预处理
-    pattern = re.compile(u'\t|\n|\.|-|:|;|\||\)|\(|\?|"')  # 定义正则表达式匹配模式
+    pattern = re.compile(u'\t|\n|\.|-|:|;|\||\)|\(|\?|\？|"')  # 定义正则表达式匹配模式
     string_data = re.sub(pattern, '', string_data)  # 将符合模式的字符去除
 
     # 文本分词
     seg_list_exact = jieba.cut(string_data, cut_all=False)  # 精确模式分词
     object_list = []
-    remove_words = [u'的', u'，', u'和', u'是', u'随着', u'对于', u'对', u'等', u'能', u'都', u'。', u' ', u'、', u'中', u'在', u'了',
-                    u'通常', u'如果', u'我们', u'需要']  # 自定义去除词库
+    remove_words = [f'的', f'，', f'和', f'是', f'随着', f'对于', f'对', f'等', f'能', f'都', f'。', f' ', f'、', f'中', f'在', f'了',
+                    f'通常', f'如果', f'我们', f'需要']  # 自定义去除词库
 
     for word in seg_list_exact:  # 循环读出每个分词
         if word not in remove_words:  # 如果不在去除词库中
@@ -234,10 +234,10 @@ def get_wordcloud():
         font_path='/System/Library/fonts/PingFang.ttc',  # 设置字体格式
         mask=mask,  # 设置背景图
         background_color="white",
-        scale=6,  # 放大画布
         mode="RGBA",  # 当参数为“RGBA”并且background_color不为空时，背景为透明
-        max_words=400,  # 最多显示词数
-        max_font_size=80  # 字体最大值
+        max_words=500,  # 最多显示词数
+        max_font_size=90,  # 字体最大值
+        scale=1
     )
 
     wc.generate_from_frequencies(word_counts)  # 从字典生成词云
@@ -245,7 +245,9 @@ def get_wordcloud():
     wc.recolor(color_func=image_colors)  # 将词云颜色设置为背景图方案
     plt.imshow(wc)  # 显示词云
     plt.axis('off')  # 关闭坐标轴
-    plt.savefig(f'musicComments/{id}/{name}.png', dpi=72)
+    # plt.savefig(f'musicComments/{id}/{name}.png', dpi=200)
+    plt.show()
+    wc.to_file(f'musicComments/{id}/{name}.png')
 
 
 if __name__ == '__main__':
