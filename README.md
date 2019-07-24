@@ -16,3 +16,9 @@
      
 	 - [墨菲定律](/GetBooks/MoFeiDingLv.py)
  </details>
+ 
+ * <details>
+      <summary>lib</summary>
+      
+ 	 - [设置代理池](/lib/SetProxiesPool.py)
+  </details>

@@ -1,6 +1,6 @@
 #!/usr/local/bin/python3.7
 # -*- coding: utf-8 -*-
-# @Time: 2019/07/15
+# @Author skillnull
 # @Function 获取在线文本内容
 
 import requests
