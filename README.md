@@ -1,6 +1,5 @@
 <p align="center">
   <a href="http://www.skillnull.com"><img src="http://skillnull.com/others/images/brand/MIT.svg" alt="License MIT"></a>
-    <a href="https://996.icu"><img src="https://img.shields.io/badge/link-996.icu-red.svg" alt="License"></a>
 </p>
 
 #### Python3.7 爬虫
