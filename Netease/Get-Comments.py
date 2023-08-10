@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3.7
+#!/usr/local/bin/python3.9
 # -*- coding: utf-8 -*-
 # @Author skillnull
 # @Function 获取网易云音乐评论
@@ -22,28 +22,21 @@ import jieba  # 结巴分词
 import matplotlib.pyplot as plt
 from PIL import Image  # 图像处理库
 
-sys.path.append('..')  # 将自定义模块目录添加进来
-from lib import SetProxiesPool  # 调用自定义模块
-
-# 从代理池取出可用代理ip
-ip_pool = SetProxiesPool.get_random_ip(SetProxiesPool.get_ip_list('https://www.xicidaili.com/nn/'))
-
-id = input('请输入歌曲ID:')
+ID = input('请输入歌曲ID:')
 name = input('请输入歌曲名称:')
 
 url = 'https://music.163.com/weapi/v1/resource/comments/R_SO_4_551816010?csrf_token='
 header = {
     'Host': 'music.163.com',
-    'Origin': 'http://music.163.com',
-    'Referer': f'http://music.163.com/song?id={id}',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36',
-    'Accept-Encoding': 'gzip, deflate, br',
+    'Origin': 'https://music.163.com',
+    'Referer': f'https://music.163.com/song?id={ID}',
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
+    'Accept-Encoding': 'gzip, deflate',
     'Content-Type': 'application/x-www-form-urlencoded',
     'Connection': 'keep-alive',
     'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,da;q=0.7'
 }
-# 设置代理服务器
-proxies = ip_pool
+print(header)
 # rid 是歌曲的 id 标志 offset是控制翻页的标志
 first_param = ''
 second_param = '010001'
@@ -80,7 +73,8 @@ def get_aes_params(text):
         params = aesEncrypt(first_param, forth_param)
     else:
         offset = str((text - 1) * 20)
-        first_param = b'{"rid":"", "offset":"%b", "total":"false", "limit":"20", "csrf_token":""}' % offset.encode('utf-8')
+        first_param = b'{"rid":"", "offset":"%b", "total":"false", "limit":"20", "csrf_token":""}' % offset.encode(
+            'utf-8')
         params = aesEncrypt(first_param, forth_param)
     # print(f'params的随机值是:{params} ')
     params = aesEncrypt(params, strw.encode('utf-8'))
@@ -100,8 +94,8 @@ def get_json(url, pm, esk):
         'params': pm,
         'encSecKey': esk
     }
-    json_text = requests.post(url, headers=header, data=form_data, proxies=proxies).text
-    return json_text
+    json_text = requests.post(url, headers=header, data=form_data)
+    return json_text.text
 
 
 # 解析评论
@@ -119,24 +113,33 @@ def get_all_comment(url):
 
     print(f'共有{comments_num}条,{page}页评论!')
 
-    os.makedirs(f'musicComments/{id}', mode=0o777, exist_ok=True)  # 创建歌曲文件夹目录
+    os.makedirs(f'musicComments/{ID}', mode=0o777, exist_ok=True)  # 创建歌曲文件夹目录
 
-    handler_comments(range(page))
+    get_page = input(f'获取多少页评论,最多{page}页:')
+    int_get_page = int(get_page)
+    if page > int_get_page:
+        handler_comments(range(int_get_page))
+    else:
+        handler_comments(range(page))
 
 
 # 处理解析后的评论
 def handler_comments(comments):
     p = multiprocessing.Process(target=save_to_html, args=(comments,))
     p.start()
+    p.join()
+
+    time.sleep(3)
+
     p = multiprocessing.Process(target=save_to_txt, args=(comments,))
     p.start()
-
     p.join()
 
 
 # 将评论存储为html
 def save_to_html(comments):
-    with codecs.open(f'musicComments/{id}/{id}.html', 'w') as file:
+    print(f'抓取{comments}页')
+    with codecs.open(f'musicComments/{ID}/{ID}.html', 'w') as file:
         file.write(f'<html>')  # 设置输出的html文件的格式
         file.write(f'<head>')
         file.write(f'<meta charset="utf-8">')
@@ -150,7 +153,10 @@ def save_to_html(comments):
                    f'<td style="min-width:65px;border: 1px solid #f4f4f4;padding: 5px;">头像</td>'
                    f'<td style="min-width:65px;border: 1px solid #f4f4f4;padding: 5px;">昵称</td>'
                    f'<td style="min-width:65px;border: 1px solid #f4f4f4;padding: 5px;">评论内容</td>'
-                   f'<td style="min-width:65px;border: 1px solid #f4f4f4;padding: 5px;">点赞总数</td>')
+                   f'<td style="min-width:65px;border: 1px solid #f4f4f4;padding: 5px;">点赞总数</td>'
+                   f'<td style="min-width:65px;border: 1px solid #f4f4f4;padding: 5px;">评论时间</td>'
+                   f'<td style="min-width:65px;border: 1px solid #f4f4f4;padding: 5px;">IP属地</td>'
+                   )
         file.write(f'</tr>')
         file.write(f'</thead>')
         for i in comments:  # 逐页抓取
@@ -162,14 +168,22 @@ def save_to_html(comments):
                 userID = item['user']['userId']  # 评论者id
                 nickname = item['user']['nickname']  # 昵称
                 comment = item['content']  # 评论内容
+                TIME = item['time']
+                if len(f'{item["time"]}') == 13:
+                    TIME = float(TIME / 1000)
+                _time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(TIME))  # 评论时间
                 likedCount = item['likedCount']  # 点赞总数
+                location = item['ipLocation']['location']  # IP属地
                 avatar = item['user']['avatarUrl']  # 头像
                 file.write(f'<tr>')
                 file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{userID}</td>')
-                file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;"><img src="{avatar}" width="50" height="50" /></td>')
+                file.write(
+                    f'<td style="border: 1px solid #f4f4f4;padding: 5px;"><img src="{avatar}" width="50" height="50" /></td>')
                 file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{nickname}</td>')
                 file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{comment}</td>')
                 file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{likedCount}</td>')
+                file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{_time}</td>')
+                file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{location}</td>')
                 file.write(f'</tr>')
                 sleeptime = random.randint(0, 2)
                 time.sleep(sleeptime)
@@ -180,7 +194,8 @@ def save_to_html(comments):
 
 # 将评论写入文本文件
 def save_to_txt(comments):
-    with codecs.open(f'musicComments/{id}/{name}.txt', 'w', encoding='utf-8') as file:
+    print(f'抓取{comments}页')
+    with codecs.open(f'musicComments/{ID}/{name}.txt', 'w', encoding='utf-8') as file:
         for i in comments:  # 逐页抓取
             commentsList = ''
             params = get_aes_params(i + 1)
@@ -192,7 +207,14 @@ def save_to_txt(comments):
                 nickname = item['user']['nickname']  # 昵称
                 userID = item['user']['userId']  # 评论者id
                 likedCount = item['likedCount']  # 点赞总数
-                comment_info = f'{userID} | {nickname} | {comment} | {likedCount}'.replace('\r', '').replace('\n', '')
+                TIME = item['time']
+                if len(f'{item["time"]}') == 13:
+                    TIME = float(TIME / 1000)
+                _time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(TIME))  # 评论时间
+                location = item['ipLocation']['location']  # IP属地
+                comment_info = f'{userID} | {nickname} | {comment} | {likedCount} | {_time} | {location}'.replace('\r',
+                                                                                                                  '').replace(
+                    '\n', '')
                 comment_info += f'\r\n-----------------------------------------------------\r\n'
                 commentsList += comment_info
             file.writelines(commentsList)
@@ -205,7 +227,7 @@ def save_to_txt(comments):
 # 生成词云
 def get_wordcloud():
     # 读取文件
-    fn = open(f'musicComments/{id}/{name}.txt', encoding="utf-8")  # 打开文件
+    fn = open(f'musicComments/{ID}/{name}.txt', encoding="utf-8")  # 打开文件
     string_data = fn.read()  # 读出整个文件
     fn.close()  # 关闭文件
 
@@ -216,8 +238,11 @@ def get_wordcloud():
     # 文本分词
     seg_list_exact = jieba.cut(string_data, cut_all=False)  # 精确模式分词
     object_list = []
-    remove_words = [f'的', f'，', f'和', f'是', f'随着', f'对于', f'对', f'等', f'能', f'都', f'。', f' ', f'、', f'中', f'在', f'了',
-                    f'通常', f'如果', f'我们', f'需要']  # 自定义去除词库
+    # 自定义去除词库
+    remove_words = [
+        f'在', f'了', f'通常', f'如果', f'我们', f'需要', f'的', f'，', f'和', f'是', f'随着', f'对于', f'对', f'等',
+        f'能', f'都', f'。', f' ', f'、', f'中', f'1', f'2', f'3', f'4', f'5', f'6', f'7', f'8', f'9', f'0', f'2023'
+    ]
 
     for word in seg_list_exact:  # 循环读出每个分词
         if word not in remove_words:  # 如果不在去除词库中
@@ -247,7 +272,7 @@ def get_wordcloud():
     plt.axis('off')  # 关闭坐标轴
     # plt.savefig(f'musicComments/{id}/{name}.png', dpi=200)
     plt.show()
-    wc.to_file(f'musicComments/{id}/{name}.png')
+    wc.to_file(f'musicComments/{ID}/{name}.png')
 
 
 if __name__ == '__main__':

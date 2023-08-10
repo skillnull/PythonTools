@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3.7
+#!/usr/local/bin/python3.9
 # -*- coding: utf-8 -*-
 # @Author skillnull
 # @Function 获取在线文本内容
@@ -14,12 +14,6 @@ header = {
     'Origin': 'https://www.shuhaige.com',
     'Host': 'www.shuhaige.com'
 }
-# 设置代理服务器
-proxies = {
-    'http:': 'http://121.232.146.184',
-    'https:': 'https://144.255.48.197'
-}
-
 
 def getContent():
     contents = requests.get(url, headers=header).text
