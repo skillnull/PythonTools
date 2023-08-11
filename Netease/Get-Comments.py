@@ -5,7 +5,6 @@
 
 import os
 import random
-import sys
 import json
 import time
 import base64
@@ -13,7 +12,6 @@ import codecs
 import requests
 import multiprocessing  # 多进程
 from Crypto.Cipher import AES
-
 import re  # 正则表达式库
 import numpy as np  # numpy数据处理库
 import collections  # 词频统计库
@@ -25,11 +23,13 @@ from PIL import Image  # 图像处理库
 ID = input('请输入歌曲ID:')
 name = input('请输入歌曲名称:')
 
-url = 'https://music.163.com/weapi/v1/resource/comments/R_SO_4_551816010?csrf_token='
+url = 'https://music.163.com/weapi/comment/resource/comments/get?csrf_token='
 header = {
+    'authority': 'music.163.com',
     'Host': 'music.163.com',
     'Origin': 'https://music.163.com',
     'Referer': f'https://music.163.com/song?id={ID}',
+    "x-music-loc-site": "100_https://music.163.com/song",
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
     'Accept-Encoding': 'gzip, deflate',
     'Content-Type': 'application/x-www-form-urlencoded',
@@ -37,7 +37,7 @@ header = {
     'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,da;q=0.7'
 }
 print(header)
-# rid 是歌曲的 id 标志 offset是控制翻页的标志
+
 first_param = ''
 second_param = '010001'
 third_param = '00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa' \
@@ -46,10 +46,11 @@ third_param = '00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b7251
 forth_param = b'0CoJUm6Qyw8W8jud'
 # params 需要第一个和第四个参数 encSecKey需要一个随机的16位字符串和第二个和第三个参数
 strw = 'S' * 16
+cursor_temp = ''
 
 
 # aes加密
-def aesEncrypt(text, key):
+def aes_encrypt(text, key):
     iv = b'0102030405060708'  # 偏移量
     pad = 16 - len(text) % 16  # 使加密信息的长度为16的倍数
     tt = pad * chr(pad)  # 返回整数i对应的ASCII字符
@@ -60,31 +61,29 @@ def aesEncrypt(text, key):
 
 
 # rsa加密
-def rsaEncrypt(pubkey, text, mouduls):
+def rsa_encrypt(pubkey, text, mouduls):
     text = text[::-1]
     rs = int(codecs.encode(text.encode('utf-8'), 'hex_codec'), 16) ** int(pubkey, 16) % int(mouduls, 16)
     return format(rs, 'x').zfill(256)
 
 
+# rid 是歌曲的 id 标志 offset是控制翻页的标志
 # 获取aes加密参数
-def get_aes_params(text):
-    if text == 1:
-        first_param = b'{"rid":"", "offset":"0", "total":"true", "limit":"20", "csrf_token":""}'
-        params = aesEncrypt(first_param, forth_param)
-    else:
-        offset = str((text - 1) * 20)
-        first_param = b'{"rid":"", "offset":"%b", "total":"false", "limit":"20", "csrf_token":""}' % offset.encode(
-            'utf-8')
-        params = aesEncrypt(first_param, forth_param)
+def get_aes_params(text, cursor):
+    params = {"rid": f"R_SO_4_{ID}", "threadId": f"R_SO_4_{ID}", "pageNo": f"{text}", "pageSize": "20", "cursor": f"{cursor}","offset": "0", "orderType": "1", "csrf_token": ""}
+    global first_param
+    first_param = bytes(str(params), encoding='utf-8')
+    params = aes_encrypt(first_param, forth_param)
+
     # print(f'params的随机值是:{params} ')
-    params = aesEncrypt(params, strw.encode('utf-8'))
+    params = aes_encrypt(params, strw.encode('utf-8'))
     # print(f'第二次加密后的随机值是：{params}')
     return params
 
 
 # 获取rsa加密参数
 def get_rsa_params(text):
-    encseckey = rsaEncrypt(second_param, text, third_param)
+    encseckey = rsa_encrypt(second_param, text, third_param)
     return encseckey
 
 
@@ -100,11 +99,15 @@ def get_json(url, pm, esk):
 
 # 解析评论
 def get_all_comment(url):
-    params = get_aes_params(1)
+    params = get_aes_params(1, -1)
     encSecKey = get_rsa_params(strw)
     json_text = get_json(url, params, encSecKey)
     json_dict = json.loads(json_text)
-    comments_num = int(json_dict['total'])
+    result = json_dict['data']
+    global cursor_temp
+    cursor_temp = result['cursor']
+    print(result)
+    comments_num = int(result['totalCount'])
 
     if comments_num % 20 == 0:
         page = comments_num // 20
@@ -160,11 +163,11 @@ def save_to_html(comments):
         file.write(f'</tr>')
         file.write(f'</thead>')
         for i in comments:  # 逐页抓取
-            params = get_aes_params(i + 1)
+            params = get_aes_params(i + 1, cursor_temp)
             encSecKey = get_rsa_params(strw)
             json_text = get_json(url, params, encSecKey)
             json_dict = json.loads(json_text)
-            for item in json_dict['comments']:
+            for item in json_dict['data']['comments']:
                 userID = item['user']['userId']  # 评论者id
                 nickname = item['user']['nickname']  # 昵称
                 comment = item['content']  # 评论内容
@@ -198,11 +201,11 @@ def save_to_txt(comments):
     with codecs.open(f'musicComments/{ID}/{name}.txt', 'w', encoding='utf-8') as file:
         for i in comments:  # 逐页抓取
             commentsList = ''
-            params = get_aes_params(i + 1)
+            params = get_aes_params(i + 1, cursor_temp)
             encSecKey = get_rsa_params(strw)
             json_text = get_json(url, params, encSecKey)
             json_dict = json.loads(json_text)
-            for item in json_dict['comments']:
+            for item in json_dict['data']['comments']:
                 comment = item['content']  # 评论内容
                 nickname = item['user']['nickname']  # 昵称
                 userID = item['user']['userId']  # 评论者id
