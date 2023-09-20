@@ -21,10 +21,8 @@ import matplotlib.pyplot as plt
 from PIL import Image  # 图像处理库
 
 ID = input('请输入歌曲ID:')
-name = input('请输入歌曲名称:')
-
-url = 'https://music.163.com/weapi/comment/resource/comments/get?csrf_token='
-header = {
+NAME = input('请输入歌曲名称:')
+HEADERS = {
     'authority': 'music.163.com',
     'Host': 'music.163.com',
     'Origin': 'https://music.163.com',
@@ -36,8 +34,9 @@ header = {
     'Connection': 'keep-alive',
     'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,da;q=0.7'
 }
-print(header)
+print(HEADERS)
 
+url = 'https://music.163.com/weapi/comment/resource/comments/get?csrf_token='
 first_param = ''
 second_param = '010001'
 third_param = '00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa' \
@@ -46,8 +45,7 @@ third_param = '00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b7251
 forth_param = b'0CoJUm6Qyw8W8jud'
 # params 需要第一个和第四个参数 encSecKey需要一个随机的16位字符串和第二个和第三个参数
 strw = 'S' * 16
-cursor_temp = ''
-
+cursor_temp = -1
 
 # aes加密
 def aes_encrypt(text, key):
@@ -59,18 +57,18 @@ def aes_encrypt(text, key):
     cipher_text = base64.b64encode(encrpyptor.encrypt(text))
     return cipher_text
 
-
 # rsa加密
 def rsa_encrypt(pubkey, text, mouduls):
     text = text[::-1]
     rs = int(codecs.encode(text.encode('utf-8'), 'hex_codec'), 16) ** int(pubkey, 16) % int(mouduls, 16)
     return format(rs, 'x').zfill(256)
 
-
-# rid 是歌曲的 id 标志 offset是控制翻页的标志
+# rid 是歌曲的 id
 # 获取aes加密参数
 def get_aes_params(text, cursor):
-    params = {"rid": f"R_SO_4_{ID}", "threadId": f"R_SO_4_{ID}", "pageNo": f"{text}", "pageSize": "20", "cursor": f"{cursor}","offset": "0", "orderType": "1", "csrf_token": ""}
+    global ID
+    params = {"rid": f"R_SO_4_{ID}", "threadId": f"R_SO_4_{ID}", "pageNo": f"{text}", "pageSize": "20",
+              "cursor": f"{cursor}", "offset": "0", "orderType": "1", "csrf_token": ""}
     global first_param
     first_param = bytes(str(params), encoding='utf-8')
     params = aes_encrypt(first_param, forth_param)
@@ -80,33 +78,27 @@ def get_aes_params(text, cursor):
     # print(f'第二次加密后的随机值是：{params}')
     return params
 
-
 # 获取rsa加密参数
 def get_rsa_params(text):
     encseckey = rsa_encrypt(second_param, text, third_param)
     return encseckey
 
-
 # 抓取评论
-def get_json(url, pm, esk):
+def get_json(pm, esk):
     form_data = {
         'params': pm,
         'encSecKey': esk
     }
-    json_text = requests.post(url, headers=header, data=form_data)
+    json_text = requests.post(url, headers=HEADERS, data=form_data)
     return json_text.text
 
-
 # 解析评论
-def get_all_comment(url):
+def get_all_comment():
     params = get_aes_params(1, -1)
-    encSecKey = get_rsa_params(strw)
-    json_text = get_json(url, params, encSecKey)
+    enc_seckey = get_rsa_params(strw)
+    json_text = get_json(params, enc_seckey)
     json_dict = json.loads(json_text)
     result = json_dict['data']
-    global cursor_temp
-    cursor_temp = result['cursor']
-    print(result)
     comments_num = int(result['totalCount'])
 
     if comments_num % 20 == 0:
@@ -125,7 +117,6 @@ def get_all_comment(url):
     else:
         handler_comments(range(page))
 
-
 # 处理解析后的评论
 def handler_comments(comments):
     p = multiprocessing.Process(target=save_to_html, args=(comments,))
@@ -138,15 +129,15 @@ def handler_comments(comments):
     p.start()
     p.join()
 
-
 # 将评论存储为html
 def save_to_html(comments):
     print(f'抓取{comments}页')
+    global cursor_temp
     with codecs.open(f'musicComments/{ID}/{ID}.html', 'w') as file:
         file.write(f'<html>')  # 设置输出的html文件的格式
         file.write(f'<head>')
         file.write(f'<meta charset="utf-8">')
-        file.write(f'<title>{name}</title>')
+        file.write(f'<title>{NAME}</title>')
         file.write(f'</head>')
         file.write(f'<body>')
         file.write(f'<table style="font-size:12px;font-weight:300;">')
@@ -164,27 +155,28 @@ def save_to_html(comments):
         file.write(f'</thead>')
         for i in comments:  # 逐页抓取
             params = get_aes_params(i + 1, cursor_temp)
-            encSecKey = get_rsa_params(strw)
-            json_text = get_json(url, params, encSecKey)
+            enc_seckey = get_rsa_params(strw)
+            json_text = get_json(params, enc_seckey)
             json_dict = json.loads(json_text)
+            cursor_temp = json_dict['data']['cursor']
             for item in json_dict['data']['comments']:
-                userID = item['user']['userId']  # 评论者id
+                user_id = item['user']['userId']  # 评论者id
                 nickname = item['user']['nickname']  # 昵称
                 comment = item['content']  # 评论内容
-                TIME = item['time']
+                time_temp = item['time']
                 if len(f'{item["time"]}') == 13:
-                    TIME = float(TIME / 1000)
-                _time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(TIME))  # 评论时间
-                likedCount = item['likedCount']  # 点赞总数
+                    time_temp = float(time_temp / 1000)
+                _time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time_temp))  # 评论时间
+                liked_count = item['likedCount']  # 点赞总数
                 location = item['ipLocation']['location']  # IP属地
                 avatar = item['user']['avatarUrl']  # 头像
                 file.write(f'<tr>')
-                file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{userID}</td>')
+                file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{user_id}</td>')
                 file.write(
                     f'<td style="border: 1px solid #f4f4f4;padding: 5px;"><img src="{avatar}" width="50" height="50" /></td>')
                 file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{nickname}</td>')
                 file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{comment}</td>')
-                file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{likedCount}</td>')
+                file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{liked_count}</td>')
                 file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{_time}</td>')
                 file.write(f'<td style="border: 1px solid #f4f4f4;padding: 5px;">{location}</td>')
                 file.write(f'</tr>')
@@ -193,50 +185,58 @@ def save_to_html(comments):
         file.write(f'</table>')
         file.write(f'</body>')
         file.write(f'</html>')
-
+    cursor_temp = -1
 
 # 将评论写入文本文件
 def save_to_txt(comments):
     print(f'抓取{comments}页')
-    with codecs.open(f'musicComments/{ID}/{name}.txt', 'w', encoding='utf-8') as file:
+    global cursor_temp
+    with codecs.open(f'musicComments/{ID}/{NAME}.txt', 'w', encoding='utf-8') as file:
         for i in comments:  # 逐页抓取
-            commentsList = ''
+            comments_list = ''
             params = get_aes_params(i + 1, cursor_temp)
-            encSecKey = get_rsa_params(strw)
-            json_text = get_json(url, params, encSecKey)
+            enc_seckey = get_rsa_params(strw)
+            json_text = get_json(params, enc_seckey)
             json_dict = json.loads(json_text)
+            cursor_temp = json_dict['data']['cursor']
             for item in json_dict['data']['comments']:
                 comment = item['content']  # 评论内容
                 nickname = item['user']['nickname']  # 昵称
-                userID = item['user']['userId']  # 评论者id
-                likedCount = item['likedCount']  # 点赞总数
-                TIME = item['time']
+                user_id = item['user']['userId']  # 评论者id
+                liked_count = item['likedCount']  # 点赞总数
+                time_temp = item['time']
                 if len(f'{item["time"]}') == 13:
-                    TIME = float(TIME / 1000)
-                _time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(TIME))  # 评论时间
+                    time_temp = float(time_temp / 1000)
+                _time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time_temp))  # 评论时间
                 location = item['ipLocation']['location']  # IP属地
-                comment_info = f'{userID} | {nickname} | {comment} | {likedCount} | {_time} | {location}'.replace('\r',
-                                                                                                                  '').replace(
+                comment_info = f'{user_id} | {nickname} | {comment} | {liked_count} | {_time} | {location}'.replace(
+                    '\r',
+                    '').replace(
                     '\n', '')
                 comment_info += f'\r\n-----------------------------------------------------\r\n'
-                commentsList += comment_info
-            file.writelines(commentsList)
+                comments_list += comment_info
+            file.writelines(comments_list)
             sleeptime = random.randint(0, 3)
             time.sleep(sleeptime)
             print(f'第{i + 1}页写入文件成功!')
-    get_wordcloud()
 
+    cursor_temp = -1
+
+    get_wordcloud()
 
 # 生成词云
 def get_wordcloud():
     # 读取文件
-    fn = open(f'musicComments/{ID}/{name}.txt', encoding="utf-8")  # 打开文件
+    fn = open(f'musicComments/{ID}/{NAME}.txt', encoding="utf-8")  # 打开文件
     string_data = fn.read()  # 读出整个文件
     fn.close()  # 关闭文件
 
     # 文本预处理
-    pattern = re.compile(u'\t|\n|\.|-|:|;|\||\)|\(|\?|\？|"')  # 定义正则表达式匹配模式
+    pattern = re.compile(u'\t|\n|\.|\||\)|\(|\?|[-:;"？]')  # 定义正则表达式匹配模式
     string_data = re.sub(pattern, '', string_data)  # 将符合模式的字符去除
+
+    if not string_data:
+        return
 
     # 文本分词
     seg_list_exact = jieba.cut(string_data, cut_all=False)  # 精确模式分词
@@ -273,13 +273,12 @@ def get_wordcloud():
     wc.recolor(color_func=image_colors)  # 将词云颜色设置为背景图方案
     plt.imshow(wc)  # 显示词云
     plt.axis('off')  # 关闭坐标轴
-    # plt.savefig(f'musicComments/{id}/{name}.png', dpi=200)
+    # plt.savefig(f'musicComments/{ID}/{NAME}.png', dpi=200)
     plt.show()
-    wc.to_file(f'musicComments/{ID}/{name}.png')
-
+    wc.to_file(f'musicComments/{ID}/{NAME}.png')
 
 if __name__ == '__main__':
     start_time = time.time()  # 开始时间
-    get_all_comment(url)
+    get_all_comment()
     end_time = time.time()  # 结束时间
     print(f'程序耗时{end_time - start_time}秒')

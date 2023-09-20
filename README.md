@@ -2,7 +2,7 @@
   <a href="http://www.skillnull.com"><img src="http://skillnull.com/others/images/brand/MIT.svg" alt="License MIT"></a>
 </p>
 
-#### Python3 爬虫
+#### Python3 脚本
 
 * <details>
      <summary>网易</summary>
