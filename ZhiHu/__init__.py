@@ -1,8 +1,7 @@
 from Billboard import billboard
-from Home import home
 
 def main():
-  home()
+  billboard()
 
 if __name__ == '__main__':
   main()
