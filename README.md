@@ -25,3 +25,9 @@
 
  </details>
 
+* <details>
+     <summary>知乎</summary>
+
+    - [知乎热榜](/ZhiHu/Billboard.py)
+
+ </details>
