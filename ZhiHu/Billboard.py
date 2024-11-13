@@ -1,4 +1,7 @@
-# 知乎热榜
+#!/usr/local/bin/python3.9
+# -*- coding: utf-8 -*-
+# @Author skillnull
+# @Function 知乎热榜
 
 import requests
 from bs4 import BeautifulSoup

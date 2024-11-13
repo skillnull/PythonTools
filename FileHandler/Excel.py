@@ -1,3 +1,8 @@
+#!/usr/local/bin/python3.9
+# -*- coding: utf-8 -*-
+# @Author skillnull
+# @Function 处理 Excel
+
 import time
 from tqdm import tqdm
 import requests
