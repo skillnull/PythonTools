@@ -10,8 +10,8 @@ import json
 def billboard():
   url = 'https://www.zhihu.com/billboard'
   res = requests.get(url)
-  soup = BeautifulSoup(res.text, 'lxml')
-  data = soup.find('script',id='js-initialData').get_text()
+  html = BeautifulSoup(res.text, 'lxml')
+  data = html.find('script',id='js-initialData').get_text()
   hotList = json.loads(data)['initialState']['topstory']['hotList']
   # print(json.dumps(hotList, indent=2, ensure_ascii=False))
 

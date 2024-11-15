@@ -7,8 +7,8 @@ from bs4 import BeautifulSoup
 import json
 
 def BaiduHot(page_source):
-  soup = BeautifulSoup(page_source, 'lxml')
-  data = soup.find('textarea', id='hotsearch_data').get_text()
+  html = BeautifulSoup(page_source, 'lxml')
+  data = html.find('textarea', id='hotsearch_data').get_text()
   hotList = json.loads(data)['hotsearch']
 
   for item in hotList:

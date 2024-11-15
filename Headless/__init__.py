@@ -5,6 +5,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from BaiduHot import BaiduHot
+from BaiduSearch import SearchResult
 
 fun_type = ''
 
@@ -36,7 +37,7 @@ def main(skip_tips):
     search_input.send_keys(search_input_value)
     search_btn.send_keys(Keys.ENTER)
     time.sleep(1)
-    print(web.title)
+    SearchResult(web.page_source)
   else:
     fun_type = '1'
     main(True)
