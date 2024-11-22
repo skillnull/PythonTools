@@ -11,6 +11,12 @@ def SearchResult(data):
   result = content.find_all('div', class_='result')
 
   for item in result:
-    res = item.find_all('h3',class_='c-title')
-    title = res[0].a.get_text()
+    titles = item.find_all('h3', class_='c-title')
+    title = titles[0].a.get_text()
     print(title)
+
+    answers = item.find_all('span', class_='content-right_1THTn')
+    if len(answers) > 0:
+      print('\r\n\t', answers[0].get_text(), '\r\n')
+    else:
+      print('\r\n')
