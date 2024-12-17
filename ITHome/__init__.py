@@ -19,8 +19,8 @@ def main():
     time = item.find("b")
     ad = item.find("b", class_="ad")
     if time and ad is None:
-      print('\r\n', href, '\t', time.get_text())
-      print(text)
+      print('\r\n%-1s' % href, '\t', time.get_text())
+      print('%-1s' % text)
 
 if __name__ == '__main__':
   main()
