@@ -31,3 +31,19 @@
     - [知乎热榜](/ZhiHu/Billboard.py)
 
  </details>
+
+
+* <details>
+     <summary>百度</summary>
+
+    - [百度热搜](/Headless/BaiduHot.py)
+    - [百度搜索](/Headless/BaiduSearch.py)
+
+ </details>
+
+* <details>
+     <summary>IT之家</summary>
+
+    - [IT之家](/ITHome/__init__.py)
+
+ </details>
