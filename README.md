@@ -44,6 +44,6 @@
 * <details>
      <summary>IT之家</summary>
 
-    - [IT之家](/ITHome/__init__.py)
+    - [IT之家剔除广告版](/ITHome/__init__.py)
 
  </details>
