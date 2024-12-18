@@ -20,7 +20,7 @@ def main():
 
   for item in lists:
     text = item.find('a').get_text()
-    print(text, '\r\n')
+    print('\r\n%-10s' % text)
 
 if __name__ == '__main__':
   main()
