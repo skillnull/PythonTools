@@ -16,5 +16,7 @@ def billboard():
   # print(json.dumps(hotList, indent=2, ensure_ascii=False))
 
   for item in hotList:
+    print(item['target']['imageArea']['url'])
+    print(item['target']['link']['url'])
     print(item['target']['titleArea']['text'])
     print('\r\n\t--------', item['target']['excerptArea']['text'], '\r\n')
