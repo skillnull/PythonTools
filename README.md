@@ -47,3 +47,11 @@
     - [IT之家剔除广告版](/ITHome/__init__.py)
 
  </details>
+
+
+* <details>
+     <summary>历史上的今天</summary>
+
+    - [历史上的今天](/HistoryToday/__init__.py)
+
+ </details>
