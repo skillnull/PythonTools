@@ -55,3 +55,25 @@
     - [历史上的今天](/HistoryToday/__init__.py)
 
  </details>
+
+* <details>
+     <summary>36kr</summary>
+
+    - [36kr](/36kr/__init__.py)
+
+ </details>
+
+* <details>
+     <summary>V2EX</summary>
+
+    - [V2EX](/V2EX/__init__.py)
+
+ </details>
+
+
+* <details>
+     <summary>微博热搜</summary>
+
+    - [微博热搜](/WeiBo/__init__.py)
+
+ </details>
