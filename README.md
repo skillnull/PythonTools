@@ -77,3 +77,10 @@
     - [微博热搜](/WeiBo/__init__.py)
 
  </details>
+
+* <details>
+     <summary>日本NHK</summary>
+
+    - [日本NHK](/NHK/__init__.py)
+
+ </details>
