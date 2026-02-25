@@ -84,3 +84,10 @@
     - [日本NHK](/NHK/__init__.py)
 
  </details>
+
+* <details>
+     <summary>通过Hidapi调整外设颜色</summary>
+
+    - [调整外星人AW720M鼠标颜色](/Hidapi/AW720M.py)
+
+ </details>
